@@ -1,0 +1,3 @@
+﻿  PBFS.cpp
+C:\Users\Matheus\Desktop\UFLA\CPA\PBFS\PBFS.cpp(98,26): warning C4244:  '=': conversão de 'double' para 'int', possível perda de dados
+  PBFS.vcxproj -> C:\Users\Matheus\Desktop\UFLA\CPA\PBFS\x64\Debug\PBFS.exe

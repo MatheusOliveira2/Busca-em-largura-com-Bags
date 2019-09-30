@@ -2,12 +2,9 @@
 #include <math.h>
 #include <map>
 #include <list>
-#include <omp.h>
 using namespace std;
 
-
-//nó da pennant
-class Node{
+class Node {
 	friend class Bag;
 	private:
 		int value = -1;
@@ -16,7 +13,6 @@ class Node{
 		Node* right;
 		list<Node*> adjacent;
 		int pennantSize(Node* root, int tamanho);
-		void pennantToVector(list<Node*> vector,Node* pennant, int position);
 	public:
 		Node(int value);
 		Node();
@@ -25,31 +21,18 @@ class Node{
 		void printGraph(map<int, Node*> graph);
 };
 
-//construtor do nó com dado
 Node::Node(int data) {
 	value = data;
 	left = NULL;
 	right = NULL;
 }
 
-//construtor de nó vazio
 Node::Node() {
 	value = -1;
 	left = NULL;
 	right = NULL;
 }
 
-//coloca os vértices da pennant em ordem em uma lista para percorrer na função processPennant
-void Node::pennantToVector(list<Node*> pennant,Node* inPennant, int position){
-	if (inPennant != NULL) {
-		pennant.push_back(inPennant);
-	pennantToVector(pennant, inPennant->left, position++);
-	pennantToVector(pennant, inPennant->right, position++);
-	}
-	
-}
-
-//insere nós adjacentes, insere lista de adjacencia(grafo)
 void Node::insertAdjacent(map<int, Node*> graph){
 	bool adj;
 	for (int i = 0; i < graph.size(); i++) {
@@ -61,8 +44,6 @@ void Node::insertAdjacent(map<int, Node*> graph){
 	
 }
 
-
-//imprime grafo
 void Node::printGraph(map<int, Node*> graph) {
 	cout << "GRAPH" << endl;
 	for (int i = 0; i < graph.size(); i++){
@@ -74,24 +55,18 @@ void Node::printGraph(map<int, Node*> graph) {
 	}
 }
 
-
-//metodo aux para impressão(Debug)
 void Node::printValue() {
 	cout << this->value << endl;
 }
 
-//método recursivo para contar o tamanho da pennant
-int Node::pennantSize(Node* node, int tamanho){
-	if (node != NULL) {
-		pennantSize(node->left, tamanho + 1);
-		pennantSize(node->right, tamanho + 1);
-		return tamanho + 1;
-	}
-	
+int Node::pennantSize(Node* node, int tamanho) {
+	pennantSize(node->left, tamanho + 1);
+	pennantSize(node->right, tamanho + 1);
+	return tamanho + 1;
 
 }
 
-//classe bag
+
 class Bag {
 	private:
 		Node** vector;
@@ -100,7 +75,6 @@ class Bag {
 		Node* pennantUnion(Node* x, Node* y);
 		Node* pennantSplit(Node* x);
 		int bagSize();
-		int elementsInBag = 0;
 	public:
 		int size;
 		Bag(int graphSize);
@@ -108,30 +82,24 @@ class Bag {
 		void debug();
 		void percorre(Node* node);
 		void PBFS(map<int, Node*> graph);
-};
+		
 
-//método para fazer busca em largura
+
+};
 void Bag::PBFS(map<int, Node*> graph){
 	graph[0]->distance = 0;
-	//cout << graph[0]->value << endl;
 	int d = 0;
 	Bag* V0 = new Bag(128); // definir constante gransize
 	V0->insertBag(graph[0]);
-	//V0->debug();
-	cout << endl;
 	map<int, Bag*> vectorBags;
 	vectorBags.insert(pair<int, Bag*>(0, V0));
-	while (vectorBags[d]->elementsInBag > 0) {
-		cout << "Nível: " << d << endl;
-		vectorBags[d]->debug();
-		cout << endl;
+	while (vectorBags[d] != NULL) {
 		vectorBags.insert(pair<int, Bag*>(d + 1, new Bag(128)));
 		processLayer(vectorBags[d], vectorBags[d + 1], d);
 		d++;
 	}
 }
 
-//retorna o tamanho da bag
 int Bag::bagSize() {
 	int maior = 0;
 	for (int i = 0; i < 8; i++) {
@@ -142,10 +110,7 @@ int Bag::bagSize() {
 	return maior+1;
 }
 
-
-//método process layer da busca
 void Bag::processLayer(Bag* inBag, Bag* outBag, int d) {
-	#pragma omp parallel for
 	for (int k = 0; k < inBag->bagSize(); k++) {
 		if (inBag->vector[k] != NULL)
 			processPenant(inBag->vector[k], outBag, d);
@@ -154,26 +119,18 @@ void Bag::processLayer(Bag* inBag, Bag* outBag, int d) {
 
 
 void Bag::processPenant(Node* inPennant, Bag* outBag, int d){
-	list<Node*>pennant;
-	pennant.push_back(inPennant);
-	inPennant->pennantToVector(pennant, inPennant->left, 0);
-	if (inPennant->pennantSize(inPennant->left,0) < 128/*verificar grainsize*/) {		for (int i = 0; i < pennant.size() ; i++)
+	if (inPennant->pennantSize(inPennant->left, 0)) {
+		for (size_t i = 0; i < length; i++)
 		{
-			inPennant = pennant.front();
-			pennant.pop_front();
-			#pragma omp parallel for
-			for(Node* x : inPennant->adjacent){
-				if (x->distance == -1) {
-					x->distance = d+1;
-					outBag->insertBag(x);
-				}
+			for (Node* x : inPennant->adjacent) {
+
 			}
 		}
+		
 	}
+	
 }
 
-
-//construtor da bag
 Bag::Bag(int graphSize){
 	if (graphSize > 0){
 		size = log2(graphSize) + 1;
@@ -184,10 +141,12 @@ Bag::Bag(int graphSize){
 	}
 	else {
 		cerr << "Grafo deve ter pelo menos um nó" << endl;
-	}	
+	}
+		
+	
+	
 }
 
-//insere na bag
 void Bag::insertBag(Node* x){
 	int k = 0;
 	while (vector[k] != NULL){
@@ -197,10 +156,8 @@ void Bag::insertBag(Node* x){
 		//cout << k <<endl;
 	}
 	vector[k] = x;
-	this->elementsInBag++;
 }
 
-//split pennant
 Node* Bag::pennantSplit(Node* x) {
 	Node* y = new Node();
 	x->left = y->right;
@@ -208,14 +165,12 @@ Node* Bag::pennantSplit(Node* x) {
 	return y;
 }
 
-//pennant union
 Node* Bag::pennantUnion(Node* x, Node* y) {
 	y->right = x->left;
 	x->left = y;
 	return x;
 }
 
-//debug
 void Bag::debug() {
 	for (int i = 0; i < size; i++)
 	{
@@ -223,29 +178,24 @@ void Bag::debug() {
 			cout << i << " :null" << endl;
 		}
 		else {
-			cout << vector[i]->value << " ";
-			percorre(vector[i]->left);
-			cout << endl;
+			//cout << vector[i]->value << endl;
+			//percorre(vector[i]->left);
 		}
 	}
 }
 
-
-//percorre a bag em ordem
 void Bag::percorre(Node* node) {
 	if(node != NULL){
-		cout << node->value << " ";
+		cout << node->value << endl;
 		percorre(node->left);
 		percorre(node->right);
 	}
-	
 }
 
 int main() {
 	int graphSize;
-	
 	cin >> graphSize;
-	Bag* bag = new Bag(128); // tratar exception caso 0
+	Bag* bag = new Bag(graphSize); // tratar exception caso 0
 	map<int, Node*> graph;
 	for (int i = 0; i < graphSize; i++){
 		graph.insert(pair<int, Node*>(i, new Node(i)));
@@ -255,10 +205,8 @@ int main() {
 		node->insertAdjacent(graph);
 	}
 	graph[0]->printGraph(graph);
-
-	bag->PBFS(graph);
 	
-	//falta fazer o teste, fazer a função pra verificar se todas as posições da bag está nula.
+	
 	//bag->debug();
 }
 

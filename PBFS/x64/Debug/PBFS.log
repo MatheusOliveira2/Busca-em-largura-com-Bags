@@ -1,4 +1,3 @@
 ﻿  PBFS.cpp
-C:\Users\Matheus\Desktop\UFLA\CPA\PBFS\PBFS.cpp(179,26): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-C:\Users\Matheus\Desktop\UFLA\CPA\PBFS\PBFS.cpp(92): warning C4715: 'Node::pennantSize': not all control paths return a value
+C:\Users\Matheus\Desktop\UFLA\CPA\PBFS\PBFS.cpp(98,26): warning C4244:  '=': conversão de 'double' para 'int', possível perda de dados
   PBFS.vcxproj -> C:\Users\Matheus\Desktop\UFLA\CPA\PBFS\x64\Debug\PBFS.exe

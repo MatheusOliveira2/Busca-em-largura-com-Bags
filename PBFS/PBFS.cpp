@@ -4,8 +4,6 @@
 #include <list>
 #include <omp.h>
 using namespace std;
-
-
 //nó da pennant
 class Node{
 	friend class Bag;
@@ -16,7 +14,7 @@ class Node{
 		Node* right;
 		list<Node*> adjacent;
 		int pennantSize(Node* root, int tamanho);
-		void pennantToVector(list<Node*> vector,Node* pennant, int position);
+		void pennantToVector(list<Node*>& vector,Node* pennant, int position);
 	public:
 		Node(int value);
 		Node();
@@ -40,7 +38,7 @@ Node::Node() {
 }
 
 //coloca os vértices da pennant em ordem em uma lista para percorrer na função processPennant
-void Node::pennantToVector(list<Node*> pennant,Node* inPennant, int position){
+void Node::pennantToVector(list<Node*> &pennant,Node* inPennant, int position){
 	if (inPennant != NULL) {
 		pennant.push_back(inPennant);
 	pennantToVector(pennant, inPennant->left, position++);
@@ -114,17 +112,16 @@ void Bag::PBFS(map<int, Node*> graph){
 	graph[0]->distance = 0;
 	//cout << graph[0]->value << endl;
 	int d = 0;
-	Bag* V0 = new Bag(128); // definir constante gransize
+	Bag* V0 = new Bag(8); // definir constante gransize
 	V0->insertBag(graph[0]);
 	//V0->debug();
 	cout << endl;
 	map<int, Bag*> vectorBags;
 	vectorBags.insert(pair<int, Bag*>(0, V0));
 	while (vectorBags[d]->elementsInBag > 0) {
-		cout << "Nível: " << d << endl;
+		cout << "Nivel: " << d << endl;
 		vectorBags[d]->debug();
-		cout << endl;
-		vectorBags.insert(pair<int, Bag*>(d + 1, new Bag(128)));
+		vectorBags.insert(pair<int, Bag*>(d + 1, new Bag(8)));
 		processLayer(vectorBags[d], vectorBags[d + 1], d);
 		d++;
 	}
@@ -133,7 +130,7 @@ void Bag::PBFS(map<int, Node*> graph){
 //retorna o tamanho da bag
 int Bag::bagSize() {
 	int maior = 0;
-	for (int i = 0; i < 8; i++) {
+	for (int i = 0; i < 4; i++) {
 		if (this->vector[i] != NULL) {
 			maior = i;
 		}
@@ -145,26 +142,31 @@ int Bag::bagSize() {
 //método process layer da busca
 void Bag::processLayer(Bag* inBag, Bag* outBag, int d) {
 	#pragma omp parallel for num_threads(4)
-	for (int k = 0; k < inBag->bagSize(); k++) {
+	for (int k = 0; k < 4; k++) {
 		if (inBag->vector[k] != NULL) {
 			processPenant(inBag->vector[k], outBag, d);
-			cout <<	"ochikubo: " << inBag->vector[k]->value << endl;
 		}
-			
 	}
+	//outBag->bagSize();
 }
 
 
 void Bag::processPenant(Node* inPennant, Bag* outBag, int d){
 	list<Node*>pennant;
 	pennant.push_back(inPennant);
+
 	inPennant->pennantToVector(pennant, inPennant->left, 0);
-	if (inPennant->pennantSize(inPennant->left,0) < 128/*verificar grainsize*/){
-		cout << "tamanho do vetor: " << inPennant->pennantSize(inPennant->left, 0) << endl;
-		for (int i = 0; i < pennant.size() ; i++)
+	if (pennant.size() < 5){
+		//cout << "tamanho do vetor: " << inPennant->pennantSize(inPennant->left, 0) << endl;		
+		//cout << "tamanho do vetor: " << inPennant->pennantSize(inPennant->left, 0) << endl;		
+		for (int i = pennant.size(); i > 0 ; i--)
 		{
+			//Pega primeiro elemento da lista(pennant)
 			inPennant = pennant.front();
+			//Remove primeiro elemento da lista(pennant)
 			pennant.pop_front();
+
+			//Para cada adjacente insere na outBag
 			#pragma omp parallel default(none)
 			for(Node* x : inPennant->adjacent){
 				if (x->distance == -1) {
@@ -176,6 +178,7 @@ void Bag::processPenant(Node* inPennant, Bag* outBag, int d){
 		}
 	}
 	else {
+
 		Node* newPennant = pennantSplit(inPennant);
 		#pragma omp task default(none)
 		processPenant(newPennant, outBag, d);
@@ -215,8 +218,9 @@ void Bag::insertBag(Node* x){
 }
 
 //split pennant
-Node* Bag::pennantSplit(Node* x) {
+Node* Bag::pennantSplit(Node* x){
 	Node* y = new Node();
+	y = x->left;
 	x->left = y->right;
 	y->right = NULL;
 	return y;
@@ -259,7 +263,7 @@ int main() {
 	int graphSize;
 	
 	cin >> graphSize;
-	Bag* bag = new Bag(128); // tratar exception caso 0
+	Bag* bag = new Bag(8); // tratar exception caso 0
 	map<int, Node*> graph;
 	for (int i = 0; i < graphSize; i++){
 		graph.insert(pair<int, Node*>(i, new Node(i)));

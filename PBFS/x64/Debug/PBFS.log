@@ -1,8 +1,1 @@
 ﻿  PBFS.cpp
-C:\Users\Matheus\Desktop\UFLA\CPA\PBFS\PBFS.cpp(162,30): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\Matheus\Desktop\UFLA\CPA\PBFS\PBFS.cpp(171,37): error C3052: 'inPennant': variable doesn't appear in a data-sharing clause under a default(none) clause
-C:\Users\Matheus\Desktop\UFLA\CPA\PBFS\PBFS.cpp(173,21): error C3052: 'd': variable doesn't appear in a data-sharing clause under a default(none) clause
-C:\Users\Matheus\Desktop\UFLA\CPA\PBFS\PBFS.cpp(174,12): error C3052: 'outBag': variable doesn't appear in a data-sharing clause under a default(none) clause
-C:\Users\Matheus\Desktop\UFLA\CPA\PBFS\PBFS.cpp(183,34): error C3001: 'task': expected an OpenMP directive name
-C:\Users\Matheus\Desktop\UFLA\CPA\PBFS\PBFS.cpp(186,38): error C3001: 'taskwait': expected an OpenMP directive name
-C:\Users\Matheus\Desktop\UFLA\CPA\PBFS\PBFS.cpp(196,26): warning C4244: '=': conversion from 'double' to 'int', possible loss of data

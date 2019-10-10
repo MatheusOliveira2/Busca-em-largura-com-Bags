@@ -93,37 +93,38 @@ int Node::pennantSize(Node* node, int tamanho){
 //classe bag
 class Bag {
 	private:
-		Node** vector;
-		void processLayer(Bag* inBag, Bag* outBag, int d);
-		void processPenant(Node* inPennant, Bag* outBag,int d);
-		Node* pennantUnion(Node* x, Node* y);
-		Node* pennantSplit(Node* x);
-		int bagSize();
+		Node** vector; //vetor de nos 
+		void processLayer(Bag* inBag, Bag* outBag, int d); //metodo que processa cada camda do grafo
+		void processPenant(Node* inPennant, Bag* outBag,int d); //metodo que processa cada pennant
+		Node* pennantUnion(Node* x, Node* y); //realiza a uniao de pennants
+		Node* pennantSplit(Node* x); //separa duas pennants
+		int bagSize();//retorna o tamanho da bag 
 		int elementsInBag = 0;
-		int numehreads = 4;
 	public:
 		int size;
-		Bag(int graphSize);
-		void insertBag(Node* x);
-		void debug();
-		void percorre(Node* node);
-		void PBFS(map<int, Node*> graph);
-		void serialBFS(map<int, Node*> graph);
+		Bag(int graphSize); //construtor
+		void insertBag(Node* x);//insere na bag
+		void debug(); //percorre a bag e imprime os valores
+		void percorre(Node* node);//percorre a pennant em ordem
+		void PBFS(map<int, Node*> graph); //busca em largura com bags
+		void serialBFS(map<int, Node*> graph); //busca em largura com fila
 };
 
-//m�todo para fazer busca em largura
+//metodo para fazer busca em largura
 void Bag::PBFS(map<int, Node*> graph){
+	//calcula tempo de execucao
 	LARGE_INTEGER clockFrequency;
 	QueryPerformanceFrequency(&clockFrequency);
 	LARGE_INTEGER start_time;
 	LARGE_INTEGER end_time;
 	QueryPerformanceCounter(&start_time);
-	graph[0]->distance = 0;
-	int d = 0;
-	Bag* V0 = new Bag(BAGSIZE);	
+
+	graph[0]->distance = 0; // coloca a distancia do vertice inical em 0
+	int d = 0; 
+	Bag* V0 = new Bag(BAGSIZE);	//cria nova bag(primeira inbag)
 	V0->insertBag(graph[0]);
-	map<int, Bag*> vectorBags;
-	vectorBags.insert(pair<int, Bag*>(0, V0));	
+	map<int, Bag*> vectorBags; // cria map de bags 
+	vectorBags.insert(pair<int, Bag*>(0, V0));	//insere a primeira bag
 	while (vectorBags[d]->elementsInBag > 0) {
 		/*
 		cout << "Nivel: " << d << endl;
@@ -274,6 +275,7 @@ void Bag::percorre(Node* node) {
 	
 }
 
+//busca em largura serial com fila
 void Bag::serialBFS(map<int, Node*>graph){
 	LARGE_INTEGER clockFrequency;
 	QueryPerformanceFrequency(&clockFrequency);

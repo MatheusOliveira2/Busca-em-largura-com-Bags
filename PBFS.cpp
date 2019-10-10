@@ -5,6 +5,8 @@
 #include <omp.h>
 #include <fstream>
 #include <queue>
+#include <time.h>
+#include <windows.h>
 
 int THREADS = 4;
 int GRAINSIZE = 128;
@@ -14,19 +16,19 @@ using namespace std;
 class Node{
 	friend class Bag;
 	private:
-		int value = -1;
-		int distance = -1; 
-		Node* left;
-		Node* right;
-		list<Node*> adjacent;
-		int pennantSize(Node* root, int tamanho);
-		void pennantToVector(list<Node*>& vector,Node* pennant, int position);
+		int value = -1; //representa o número do vertice
+		int distance = -1; //representa a distancia do vertice
+		Node* left; //ponteiro para o filho a esquerda
+		Node* right;//ponteiro para o filho a direita
+		list<Node*> adjacent; //lista de adjacencia do vertice
+		int pennantSize(Node* root, int tamanho);//metodo que retorna o tamanho da pennant 
+		void pennantToVector(list<Node*>& vector,Node* pennant, int position);//metodo que converte a pennant em uma lista
 	public:
-		Node(int value);
-		Node();
-		void insertAdjacent(map<int, Node*> graph, int i);
-		void printValue();
-		void printGraph(map<int, Node*> graph);
+		Node(int value);//construtor
+		Node();//construtor
+		void insertAdjacent(map<int, Node*> graph, int i);//metodo responsavel por inserir o vizinho no vetor de adjacencia
+		void printValue();//metodo auxiliar para imprimir a posicao do vetor
+		void printGraph(map<int, Node*> graph);//metodo para imprimir o grafo
 };
 
 //construtor do no com dado
@@ -43,7 +45,7 @@ Node::Node() {
 	right = NULL;
 }
 
-//coloca os vertices da pennant em ordem em uma lista para percorrer na fun��o processPennant
+//coloca os vertices da pennant em ordem em uma lista para percorrer na funcao processPennant
 void Node::pennantToVector(list<Node*> &pennant,Node* inPennant, int position){
 	if (inPennant != NULL) {
 		pennant.push_back(inPennant);
@@ -67,19 +69,19 @@ void Node::printGraph(map<int, Node*> graph) {
 	for (int i = 0; i < graph.size(); i++){
 		cout << i;
 		for (Node* x : graph[i]->adjacent) {
-			cout << "  -> " << x->value << " ";
+			cout << "  -> " << x->value << "(" << x->distance << ")" << " ";
 		}
 		cout << endl;
 	}
 }
 
 
-//metodo aux para impress�o(Debug)
+//metodo aux para impressao(Debug)
 void Node::printValue() {
 	cout << this->value << endl;
 }
 
-//m�todo recursivo para contar o tamanho da pennant
+//metodo recursivo para contar o tamanho da pennant
 int Node::pennantSize(Node* node, int tamanho){
 	if (node != NULL) {
 		pennantSize(node->left, tamanho + 1);
@@ -111,34 +113,43 @@ class Bag {
 
 //m�todo para fazer busca em largura
 void Bag::PBFS(map<int, Node*> graph){
+	LARGE_INTEGER clockFrequency;
+	QueryPerformanceFrequency(&clockFrequency);
+	LARGE_INTEGER start_time;
+	LARGE_INTEGER end_time;
+	QueryPerformanceCounter(&start_time);
 	graph[0]->distance = 0;
-	//cout << graph[0]->value << endl;
 	int d = 0;
-	Bag* V0 = new Bag(BAGSIZE); // definir constante gransize
+	Bag* V0 = new Bag(BAGSIZE);	
 	V0->insertBag(graph[0]);
-	//V0->debug();
-	cout << endl;
 	map<int, Bag*> vectorBags;
 	vectorBags.insert(pair<int, Bag*>(0, V0));	
 	while (vectorBags[d]->elementsInBag > 0) {
+		/*
 		cout << "Nivel: " << d << endl;
 		vectorBags[d]->debug();
 		cout << endl;
+		*/
 		vectorBags.insert(pair<int, Bag*>(d + 1, new Bag(BAGSIZE)));
 		processLayer(vectorBags[d], vectorBags[d + 1], d);
 		d++;
 	}
+	QueryPerformanceCounter(&end_time);
+	LARGE_INTEGER delta;
+	delta.QuadPart = end_time.QuadPart - start_time.QuadPart;
+	double deltaSeconds = ((double)delta.QuadPart) / clockFrequency.QuadPart;
+	cout << "Tempo de execucao Busca em Largura paralela: " << deltaSeconds << endl;
 }
 
 
-//m�todo process layer da busca
+//metodo process layer da busca
 void Bag::processLayer(Bag* inBag, Bag* outBag, int d) {
 	#pragma omp parallel for num_threads(THREADS)
 	for (int k = 0; k < 9; k++) {
 		if (inBag->vector[k] != NULL) {
 			processPenant(inBag->vector[k], outBag, d);
 		}
-//#pragma omp critical
+		//#pragma omp critical
 	//	cout << "NumeroThread: " << omp_get_thread_num() << endl;
 	}
 }
@@ -147,7 +158,6 @@ void Bag::processLayer(Bag* inBag, Bag* outBag, int d) {
 void Bag::processPenant(Node* inPennant, Bag* outBag, int d){
 	list<Node*>pennant;
 	pennant.push_back(inPennant);
-
 	inPennant->pennantToVector(pennant, inPennant->left, 0);
 	if (pennant.size() < GRAINSIZE+1){		
 		for (int i = pennant.size(); i > 0 ; i--)
@@ -163,11 +173,13 @@ void Bag::processPenant(Node* inPennant, Bag* outBag, int d){
 			for(int j = 0; j < inPennant->adjacent.size(); j++){
 				Node* x = inPennant->adjacent.front();
 				inPennant->adjacent.pop_front();
+				inPennant->adjacent.push_back(x);
+				#pragma omp critical
 				if (x->distance == -1) {
 					x->distance = d+1;
 					outBag->insertBag(x);
 				}
-//#pragma omp critical
+		//#pragma omp critical
 		//	cout << "NumeroThread: " << omp_get_thread_num() << endl;
 			
 			}
@@ -241,10 +253,10 @@ void Bag::debug() {
 	for (int i = 0; i < size; i++)
 	{
 		if (this->vector[i] == NULL){
-			cout << i << " :null" << endl;
+			cout << i << ":null" << endl;
 		}
 		else {
-			cout << vector[i]->value << " ";
+			cout << i << ": " << vector[i]->value << " ";
 			percorre(vector[i]->left);
 			cout << endl;
 		}
@@ -263,21 +275,29 @@ void Bag::percorre(Node* node) {
 }
 
 void Bag::serialBFS(map<int, Node*>graph){
-	
+	LARGE_INTEGER clockFrequency;
+	QueryPerformanceFrequency(&clockFrequency);
+	LARGE_INTEGER start_time;
+	LARGE_INTEGER end_time;
+	QueryPerformanceCounter(&start_time);
 	queue<Node*> fila;
 	graph[0]->distance = 0;
 	fila.push(graph[0]);
 	while(fila.size()>0){
 		Node* vertice = fila.front();
+		fila.pop();
 		for (Node* x : vertice->adjacent) {
 			if (x->distance == -1) {
 				x->distance = vertice->distance + 1;
 				fila.push(x);
 			}
-				
-			
 		}
 	}
+	QueryPerformanceCounter(&end_time);
+	LARGE_INTEGER delta;
+	delta.QuadPart = end_time.QuadPart - start_time.QuadPart;
+	double deltaSeconds = ((double)delta.QuadPart) / clockFrequency.QuadPart;
+	cout << "Tempo de execucao Busca em Largura com fila: " << deltaSeconds << endl;
 }
 
 int main() {
@@ -285,7 +305,7 @@ int main() {
 	int edges;
 	Bag* bag = new Bag(BAGSIZE);
 	ifstream grafFile;
-	grafFile.open("Teste500.txt");
+	grafFile.open("Teste.txt");
 	grafFile >> graphSize >> edges;
 	map<int, Node*> graph;
 	for (int i = 0; i < graphSize; i++){
@@ -300,6 +320,10 @@ int main() {
 		node = graph[adjacent - 1];
 		node->insertAdjacent(graph, insert - 1);
 	}
-	graph[0]->printGraph(graph);
+
+	//graph[0]->printGraph(graph);
+	//bag->serialBFS(graph);
 	bag->PBFS(graph);
+	//graph[0]->printGraph(graph);
+	
 }
